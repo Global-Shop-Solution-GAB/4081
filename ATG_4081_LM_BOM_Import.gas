@@ -1,0 +1,825 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("BOM Import Preview")
+gui.Form1..size(9600,6945)
+gui.Form1..position(0,0)
+gui.Form1..event(unload,Exit)
+gui.Form1..alwaysontop(True)
+gui.Form1..fontname("arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(False,False,False,False,False)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(True)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(True)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.mltxt1.create(textboxm)
+gui.Form1.mltxt1.text("MLText")
+gui.Form1.mltxt1.visible(True)
+gui.Form1.mltxt1.size(9390,5625)
+gui.Form1.mltxt1.zorder(0)
+gui.Form1.mltxt1.position(25,115)
+gui.Form1.mltxt1.enabled(False)
+gui.Form1.mltxt1.alignment(0)
+gui.Form1.mltxt1.fontname("arial")
+gui.Form1.mltxt1.fontsize(8)
+gui.Form1.mltxt1.BackColor(-2147483643)
+gui.Form1.mltxt1.defaultvalue("")
+gui.Form1.mltxt1.controlgroup(0)
+gui.Form1.ImportYes.create(button)
+gui.Form1.ImportYes.caption("Yes/Continue")
+gui.Form1.ImportYes.visible(True)
+gui.Form1.ImportYes.size(2130,375)
+gui.Form1.ImportYes.zorder(0)
+gui.Form1.ImportYes.position(5875,5930)
+gui.Form1.ImportYes.enabled(True)
+gui.Form1.ImportYes.fontname("arial")
+gui.Form1.ImportYes.fontsize(8)
+gui.Form1.ImportYes.event(click,WriteBOM)
+gui.Form1.ImportYes.defaultvalue("")
+gui.Form1.ImportYes.controlgroup(0)
+gui.Form1.ImportNo.create(button)
+gui.Form1.ImportNo.caption("No/Abort")
+gui.Form1.ImportNo.visible(True)
+gui.Form1.ImportNo.size(975,375)
+gui.Form1.ImportNo.zorder(0)
+gui.Form1.ImportNo.position(8200,5930)
+gui.Form1.ImportNo.enabled(True)
+gui.Form1.ImportNo.fontname("arial")
+gui.Form1.ImportNo.fontsize(8)
+gui.Form1.ImportNo.event(click,Exit)
+gui.Form1.ImportNo.defaultvalue("")
+gui.Form1.ImportNo.controlgroup(0)
+gui.Form1.lbl1.create(label,"Are you sure you want to import this data?",True,5460,360,1,100,5960,True,0,arialblack,11,-2147483633,0)
+gui.Form1.lbl1.defaultvalue("")
+gui.Form1.lbl1.controlgroup(0)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.Global.Globalccc.Declare(String)
+Variable.Global.FileLoc.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+V.local.sDSN.declare(String)
+F.intrinsic.string.concat("GLOBAL_",V.caller.companycode,V.local.sDSN)
+
+
+'F.ODBC.Connection!Conn.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+F.ODBC.Connection!Conn.OpenConnection(V.local.sDSN,"Master","master")
+
+Function.Intrinsic.UI.ShowOpenFileDialog("","*.xsr","C:\",Variable.Global.FileLoc)
+
+Function.Intrinsic.Control.CallSub("ReadBOM")
+Gui.Form1..Show
+
+Program.Sub.Main.End
+
+Program.Sub.ReadBOM.Start
+
+' if file was not selected, just exit
+Function.Intrinsic.Control.If(Variable.Global.FileLoc,=,"***CANCEL***")
+	Function.Intrinsic.Control.CallSub("Exit")
+Function.Intrinsic.Control.EndIf
+
+' got here, so read file and write txt to the screen
+Variable.Local.ReadFile.Declare(String)
+Function.Intrinsic.File.File2String(Variable.Global.FileLoc,Variable.Local.ReadFile)
+Gui.Form1.mltxt1.Text(Variable.Local.ReadFile)
+
+Program.Sub.ReadBOM.End
+
+Program.Sub.Exit.Start
+F.ODBC.Connection!Conn.Close
+Function.Intrinsic.Control.End
+
+Program.Sub.Exit.End
+
+Program.Sub.WriteBOM.Start
+Gui.Form1.ImportNo.Enabled(false)
+Gui.Form1.ImportYes.enabled(false)
+
+
+V.Local.ReadFile.Declare(String)
+V.Local.SplitString.Declare(String)
+V.Local.LoopCount.Declare(Long)
+V.Local.Seperator4Chars.Declare(String)
+V.Local.ParentStart.Declare(Long)
+V.Local.ChildrenStart.Declare(Long)
+V.Local.ChildrenStop.Declare(Long)
+V.Local.sSql.Declare(String)
+V.Local.PartMissing.Declare(String)
+V.Local.ptemp.Declare(String)
+V.Local.ParentPos.Declare(String)
+V.Local.ChildrenPos.Declare(String)
+V.Local.ParentLen.Declare(String)
+V.Local.ChildrenLen.Declare(String)
+V.Local.CurrentChild.Declare(Long)
+V.Local.Childrendata.Declare(String)
+V.Local.x.Declare(Long)
+V.Local.temparray.Declare(String)
+V.Local.ubound.Declare(Long)
+V.Local.BOMLOAD.Declare(String)
+V.Local.user.Declare(String)
+V.Local.filename.Declare(String)
+V.Local.filedir.Declare(String)
+V.Local.ldprogram.Declare(String)
+V.Local.LDDRAW.Declare(String)
+V.Local.ParentData.Declare(String)
+V.Local.PartData.Declare(String)
+V.Local.isPL.Declare(String)
+V.Local.qty.Declare(String)
+V.Local.childsort.Declare(String)
+V.Local.desc.Declare(String)
+V.Local.subtemp.Declare(Long)
+V.Local.temp.Declare(String)
+V.Local.job.Declare(String)
+V.Local.job20.Declare(String)
+V.Local.jobDESC.Declare(String)
+V.Local.suffix.Declare(String)
+V.Local.suffix2.Declare(String)
+V.Local.loadchild.Declare(String)
+V.Local.schar.Declare(String)
+V.Local.lchar.Declare(Long)
+V.Local.tempdesc.Declare(String)
+V.Local.sCombinedFiles.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.sVal.Declare(String)
+V.Local.sTEMP.Declare(String)
+V.Local.iHndl.Declare(Long)
+V.Local.bInstr.Declare(Boolean)
+
+V.Local.LoopCount.Set(0)
+
+' read the file, locally
+Function.Intrinsic.File.File2String(Variable.Global.FileLoc,Variable.Local.ReadFile)
+
+' get actual file name
+F.Intrinsic.String.Split(V.Global.FileLoc,"\",V.Local.splitstring)
+V.Global.FileLoc.Set(V.Local.SplitString(v.Local.SplitString.UBound))
+
+' split out each line
+Function.Intrinsic.String.Split(Variable.Local.ReadFile,Variable.Ambient.NewLine,Variable.Local.SplitString)
+
+' Description
+F.Intrinsic.String.Mid(V.Local.SplitString(3),16,30,V.Local.jobDESC)
+F.Intrinsic.String.RPad(V.Local.jobDESC.Trim," ",30,V.Local.jobDESC)
+
+' Job
+F.Intrinsic.String.Mid(V.Local.SplitString(4),14,5,V.Local.job)
+
+' Suffix
+F.Intrinsic.String.Mid(V.Local.SplitString(10),2,5,V.Local.suffix)
+
+' WO
+F.Intrinsic.String.Concat(V.Local.job.Trim,"-",V.Local.suffix,V.Local.job20)
+
+'Drawing Parent
+F.Intrinsic.String.RPad(V.Local.job20.Trim," ",20,V.Local.job20)
+
+'BOM Header Data
+F.Intrinsic.String.Concat(V.Local.job20,V.Local.job20,"                ",V.local.jobDESC,"    ","          ","                    ",V.local.ldDraw)
+
+' clear an existing record for the BOM about to be loaded
+F.Intrinsic.String.Concat("DELETE FROM BOM_MSTR WHERE PARENT='",V.Local.job20,"'",V.Local.sSQL)
+F.ODBC.Connection!Conn.Execute(V.Local.sSQL)
+
+' do until last line
+Function.Intrinsic.Control.DoUntil(Variable.Local.LoopCount,=,Variable.Local.SplitString.UBound)
+
+	'Find the Starting Location of the Parent and Children.
+	Function.Intrinsic.Control.DoUntil(Variable.Local.LoopCount,=,Variable.Local.SplitString.UBound)
+
+		' read the lef 4 characters to try to determine where the data starts
+		Function.Intrinsic.String.Left(Variable.Local.SplitString(Variable.Local.LoopCount),4,Variable.Local.Seperator4Chars)
+
+		' the parent line will be immediate following the spaced dashline
+		Function.Intrinsic.Control.If(Variable.Local.Seperator4Chars,=,"- - ")
+			Variable.Local.ParentStart.Set(Variable.Local.LoopCount)
+			Function.Intrinsic.Math.Add(Variable.Local.ParentStart,1,Variable.Local.ParentStart)
+			Function.Intrinsic.Math.Add(Variable.Local.ParentStart,1,Variable.Local.ChildrenStart)
+		Function.Intrinsic.Control.EndIf
+
+		' increment the loopcount and read next line
+		Function.Intrinsic.Math.Add(Variable.Local.LoopCount,1,Variable.Local.LoopCount)
+		Function.Intrinsic.String.Left(Variable.Local.SplitString(Variable.Local.LoopCount),4,Variable.Local.Seperator4Chars)
+
+		'Find the sub Location of the last Child of the BOM
+		Function.Intrinsic.Control.If(Variable.Local.Seperator4Chars,=,"- - ")
+		Function.Intrinsic.Control.AndIf(Variable.Local.ChildrenStart,>,0)
+			Function.Intrinsic.Math.Sub(Variable.Local.LoopCount,0,Variable.Local.ChildrenStop)
+			Function.Intrinsic.Control.ExitDo
+		Function.Intrinsic.Control.EndIf
+
+		'Find the Location of the last Child of the BOM
+		Function.Intrinsic.Control.If(Variable.Local.Seperator4Chars,=,"----")
+		Function.Intrinsic.Control.AndIf(Variable.Local.ChildrenStart,>,0)
+			Function.Intrinsic.Math.Sub(Variable.Local.LoopCount,0,Variable.Local.ChildrenStop)
+			Function.Intrinsic.Control.ExitDo
+		Function.Intrinsic.Control.EndIf
+	Function.Intrinsic.Control.Loop
+
+
+' per quote 4725, positions have changed
+	'Positions of Parent Data.
+	' Mark *!* Qty. *!* Profile *!* Length *!* Unit wt *!* Ext wt
+'	Function.Intrinsic.String.Split("1*!*8*!*13*!*36*!*49*!*61","*!*",Variable.Local.ParentPos)
+	F.Intrinsic.String.Split("1*!*8*!*13*!*96*!*112*!*130*!*139","*!*",V.Local.ParentPos)
+
+	'Positions of Children Data
+	' Mark *!* Qty. *!* Profile *!* Length *!* Unit wt *!* Ext wt *!* Area
+'	Function.Intrinsic.String.Split("2*!*8*!*13*!*36*!*49*!*61*!*70","*!*",Variable.Local.ChildrenPos)
+	' Mark *!*Qty*!*Buyout*!*Raw Mat*!*Grade*!*Length*!*unit Wt*!*ExtWt
+	F.Intrinsic.String.Split("1*!*8*!*13*!*35*!*96*!*112*!*133*!*147","*!*",V.Local.ChildrenPos)
+
+	'Lengths for Parents and Children
+	Function.Intrinsic.String.Split("7*!*3*!*20*!*20*!*15*!*8*!*8","*!*",Variable.Local.ParentLen)
+	Function.Intrinsic.String.Split("7*!*3*!*17*!*20*!*15*!*20*!*6*!*11","*!*",Variable.Local.ChildrenLen)
+
+	' split the line appropriately
+	Function.Intrinsic.String.PositionalSplit(Variable.Local.SplitString(Variable.Local.ParentStart),Variable.Local.ParentPos,Variable.Local.ParentLen,Variable.Local.ParentData)
+
+	'Create new BOM in GS
+	F.Intrinsic.String.RPad(V.Caller.user," ",8,V.Local.user)
+
+
+	'Load Parent
+	'Part
+	F.Intrinsic.String.Trim(V.Local.ParentData(0),V.Local.ParentData(0))
+	F.Intrinsic.String.Concat(V.Local.job,V.Local.ParentData(0),V.Local.ParentData(0))
+	F.Intrinsic.String.RPad(V.Local.ParentData(0)," ",20,V.Local.ParentData(0))
+
+	'Description
+	F.Intrinsic.String.RPad(V.Local.ParentData(2)," ",30,V.Local.ParentData(2))
+
+	'BOM Header Data
+	F.Intrinsic.String.Concat(V.Local.ParentData(0),V.Local.ParentData(0),"                ",V.Local.ParentData(2).Trim,"    ","          ","                    ",V.Local.ldprogram)
+	F.Intrinsic.String.Concat("DELETE FROM BOM_MSTR WHERE PARENT='",V.Local.ParentData(0),"'",V.Local.sSQL)
+	F.ODBC.Connection!Conn.Execute(V.Local.sSQL)
+
+	F.Intrinsic.String.RPad(V.Local.ParentData(1).Trim," ",16,V.Local.ParentData(1))
+
+	'Drawing Children
+	F.Intrinsic.String.Concat(V.Local.job.Trim,"-",V.Local.suffix,V.Local.suffix2)
+	F.Intrinsic.String.RPad(V.Local.suffix2," ",20,V.Local.suffix2)
+	F.Intrinsic.String.Concat(V.Local.lDDraw,V.Ambient.NewLine,V.Local.suffix2,V.Local.ParentData(0),V.Local.ParentData(1),V.Local.ParentData(2),"    ","          ","PF",V.Local.ldDraw)
+
+	Variable.Local.CurrentChild.Set(Variable.Local.ChildrenStart)
+
+	'Add Children BOMs
+	Function.Intrinsic.Control.DoUntil(Variable.Local.CurrentChild,=,Variable.Local.ChildrenStop)
+
+
+		Function.Intrinsic.String.PositionalSplit(Variable.Local.SplitString(Variable.Local.CurrentChild),Variable.Local.ChildrenPos,Variable.Local.ChildrenLen,Variable.Local.ChildrenData)
+'		Function.Intrinsic.String.Concat(Variable.Local.Childrendata(0).Trim,"",Variable.Local.Childrendata(0))
+		Function.Intrinsic.String.Trim(Variable.Local.Childrendata(5),Variable.Local.Childrendata(5))
+
+		'Don't create a child bom if part is lower case (ascii 97 - 122)
+		F.Intrinsic.String.Left(Variable.Local.Childrendata(0).Trim,1,V.Local.schar)
+		F.Intrinsic.String.Asc(V.Local.schar,V.Local.lchar)
+
+'==================NOT Child BOM===================
+		F.Intrinsic.Control.If(V.Local.lchar,>,96)
+
+			'Reference Upload
+			'Child Part
+			F.Intrinsic.String.Trim(V.Local.ParentData(0),V.Local.ParentData(0))
+			F.Intrinsic.String.Concat(V.Local.ParentData(0),V.Local.ChildrenData(0).Trim,V.Local.ChildrenData(0))
+			F.Intrinsic.String.RPad(V.Local.ParentData(0)," ",20,V.Local.ParentData(0))
+			F.Intrinsic.string.RPad(V.Local.Childrendata(0).Trim," ",20,V.Local.Childrendata(0))
+
+			'Child Qty
+			F.Intrinsic.String.RPad(V.Local.Childrendata(1).Trim," ",16,V.Local.Childrendata(1))
+
+			'Raw Material Part Upload (childrendata(2) will be blank
+			F.Intrinsic.Control.If(V.Local.Childrendata(2).Trim,=,"")
+
+				'Create part from Description using X as a Deliminator
+				V.local.desc.set(V.local.Childrendata(3))
+				F.Intrinsic.String.Concat(V.Ambient.DblQuote,"X",V.Local.ptemp)
+				F.Intrinsic.String.Split(V.Local.desc,V.Local.ptemp,V.Local.PartData)
+				V.local.ptemp.set(V.Local.desc)
+				F.Intrinsic.String.RPad(V.Local.ptemp," ",30,V.Local.ptemp)
+				F.Intrinsic.String.RPad(V.local.Childrendata(3).Trim," ",30,V.Local.desc)
+				
+				'Use QTY or Area	  If Area is 0 then default to qty
+				F.Intrinsic.String.left(V.local.Desc.Trim,2,V.Local.isPL)
+
+				' Length
+				F.Intrinsic.Control.If(V.Local.Childrendata(5).Trim,<>,"")
+					F.Intrinsic.Control.CallSub(Length,"LEN",V.Local.Childrendata(5))
+					V.Local.Childrendata(5).Set(V.Args.LEN)
+				F.Intrinsic.Control.EndIf
+
+				' For raw material, parts that begin with PL are based on square footage
+				F.Intrinsic.Control.If(V.Local.isPL,=,"PL")
+
+					' if area is ont blank, call sub to get qty based on calculation (per quote 4725: quantity x width (in inches)  x (12 x length)  / 144)
+					F.Intrinsic.Control.CallSub("CalculatePL","QTY",V.Local.Childrendata(1),"sPart",V.local.Desc,"Length",V.Local.Childrendata(5))
+					V.Local.qty.Set(V.Args.fQTY)
+
+					F.Intrinsic.String.RPad(V.Local.PartData(0)," ",30,V.Local.desc)
+
+				' Other raw material items are calculated quantity x length = LF required for the job
+				F.Intrinsic.Control.Else
+
+					' RM Qty will be determined by UM
+					F.Intrinsic.String.Replace(V.Local.Childrendata(3),"'","''",V.Local.sVal)
+					F.Intrinsic.String.Concat("select UM_Inventory from Inventory_Mstr where part='",V.Local.sVal,"' ",V.Local.sSql)
+					F.ODBC.Connection!Conn.ExecuteAndReturn(v.Local.sSql,v.Local.sRet)
+					F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+					F.Intrinsic.Control.If(V.Local.sRet(0).Trim,=,"EA")
+						V.Local.qty.Set(V.Local.Childrendata(1).Trim)
+
+					F.Intrinsic.Control.ElseIf(V.Local.sRet(0).Trim,=,"FT")
+						F.Intrinsic.String.RPad(V.Local.Childrendata(5).Trim," ",14,V.Local.Childrendata(5))
+						V.Local.qty.Set(V.Local.Childrendata(5))
+
+					F.Intrinsic.Control.Else
+						'F.Intrinsic.Math.Mult(V.Local.Childrendata(1).Float,V.Local.Childrendata(5),V.Local.qty)
+						F.Intrinsic.String.RPad(V.Local.Childrendata(5).Trim," ",14,V.Local.Childrendata(5))
+						V.Local.qty.Set(V.Local.Childrendata(5))
+					F.Intrinsic.Control.EndIf
+
+				F.Intrinsic.Control.EndIf
+
+				F.Intrinsic.String.RPad(V.local.Childrendata(3)," ",30,V.Local.desc)
+				F.Intrinsic.String.RPad(V.Local.qty," ",14,V.Local.qty)
+
+
+
+
+				'Child upload Data Set for Reference Comment
+				F.Intrinsic.String.Concat(V.local.childsort,"",V.Local.desc,"*!*",V.Ambient.NewLine,V.Local.ParentData(0),V.Local.ChildrenData(0).LTrim,V.Local.Childrendata(1),V.local.Desc,V.Local.qty,"PF","*!!*",V.Local.childsort)
+				F.Intrinsic.String.RPad(V.Local.qty.Trim," ",16,V.Local.qty)
+
+				'Check if Part Exists in Inventory and get master description, if not in inventory then don't upload.
+'				F.Intrinsic.String.Replace(V.Local.desc,"'","''",V.Local.tempdesc)
+				V.Local.tempdesc.Set(V.Local.PartData(0).trim)
+				F.Intrinsic.String.Concat("Select * from INVENTORY_MSTR where PART='",V.Local.tempdesc.Trim,"' ",V.Local.sSql)
+				F.ODBC.Connection!Conn.OpenRecordsetRW("rs",V.Local.sSql)
+					F.Intrinsic.Control.If(V.Odbc.Conn!rs.EOF,=,True)
+					F.Intrinsic.Control.AndIf(V.Local.tempdesc.Trim,<>,"")
+						F.Intrinsic.String.IsInString(V.Local.PartMissing,V.Local.desc,True,V.Local.bInstr)
+						F.Intrinsic.Control.If(V.Local.bInstr,=,False)
+							F.Intrinsic.String.Concat(V.Local.PartMissing,V.Local.desc,V.Ambient.NewLine,V.Local.PartMissing)
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.Else
+
+						'Child Upload Data Set for Normal Part & setup 2nd level bom and raw material
+						F.Intrinsic.String.RPad(V.ODBC.Conn!rs.FieldValTrim!DESCRIPTION," ",30,V.Local.ptemp)
+						F.Intrinsic.String.Concat(V.Local.ChildrenData(0),V.Local.ChildrenData(0),"                ",V.Local.desc,"    ","                    ",V.Local.loadchild)
+
+						F.Intrinsic.String.RPad(V.Local.tempdesc.Trim," ",20,V.Local.desc)
+						F.Intrinsic.String.Concat(V.Local.loadchild,V.Ambient.NewLine,V.Local.ChildrenData(0),V.Local.desc,V.Local.qty,V.Local.ptemp,"              ","NP",V.Local.loadchild)
+
+						F.Intrinsic.Control.If(V.Local.loadchild.Trim,<>,"")
+							F.Intrinsic.String.Concat("DELETE FROM BOM_MSTR WHERE PARENT='",V.Local.ChildrenData(0),"'",V.Local.sSQL)
+							F.ODBC.Connection!Conn.Execute(V.Local.sSQL)
+
+							F.Intrinsic.String.Concat(V.Local.sCombinedFiles,V.Ambient.NewLine,V.Local.loadchild,V.Local.sCombinedFiles)
+							F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","LB",V.Caller.Terminal,V.Caller.CompanyCode,V.Local.filedir)
+							F.Intrinsic.File.String2File(V.Local.filedir,V.Local.loadchild)
+
+							F.Intrinsic.String.Concat("LB",V.Caller.Terminal,V.Caller.CompanyCode," Y",V.Local.filename)
+							F.Intrinsic.String.RPad(V.Caller.User," ",8,V.Local.temp)
+							F.Intrinsic.String.Concat(V.Ambient.DblQuote,V.Caller.CompanyCode,V.Caller.Terminal,"SUPERVSR",V.Local.filename,V.Ambient.DblQuote,V.Local.BOMLOAD)
+
+
+
+							F.Intrinsic.Control.DoEvents
+							F.Intrinsic.Task.LaunchGSSSync("XUPLBOML","-c",V.Local.BOMLOAD)
+						F.Intrinsic.Control.EndIf
+
+					F.Intrinsic.Control.EndIf
+				F.ODBC.Conn!rs.Close
+
+'====================
+			' see if there is a Buyout; if there is add lines for it
+'			F.Intrinsic.Control.If(V.Local.Childrendata(2).Trim,<>,"")
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.RPad(V.Local.Childrendata(2)," ",30,V.Local.desc)
+				F.Intrinsic.String.RPad(V.Local.qty," ",14,V.Local.qty)
+
+				'Child upload Data Set for Reference Comment
+				F.Intrinsic.String.Concat(V.local.childsort,"",V.Local.desc,"*!*",V.Ambient.NewLine,V.Local.ParentData(0),V.Local.ChildrenData(0),V.Local.Childrendata(1),V.local.Desc,V.Local.qty,"PF","*!!*",V.Local.childsort)
+
+				'Check if Part Exists in Inventory and get master description, if not in inventory then don't upload.
+				F.Intrinsic.String.Replace(V.Local.Childrendata(2).Trim,"'","''",V.Local.tempdesc)
+				F.Intrinsic.String.RPad(V.Local.Childrendata(2).Trim," ",20,V.Local.desc)
+				F.Intrinsic.String.Concat("Select * from INVENTORY_MSTR where PART='",V.Local.tempdesc.Trim,"' ",V.Local.sSql)
+				F.ODBC.Connection!Conn.OpenRecordsetRW("rs",V.Local.sSql)
+					F.Intrinsic.Control.If(V.Odbc.Conn!rs.EOF,=,True)
+					F.Intrinsic.Control.AndIf(V.Local.tempdesc.Trim,<>,"")
+						F.Intrinsic.String.IsInString(V.Local.PartMissing,V.Local.desc,True,V.Local.bInstr)
+						F.Intrinsic.Control.If(V.Local.bInstr,=,False)
+							F.Intrinsic.String.Concat(V.Local.PartMissing,V.Local.desc,V.Ambient.NewLine,V.Local.PartMissing)
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.Else
+
+
+						'Child Upload Data Set for Normal Part & setup 2nd level bom and raw material
+						F.Intrinsic.String.RPad(V.ODBC.Conn!rs.FieldValTrim!DESCRIPTION," ",30,V.Local.ptemp)
+						F.Intrinsic.String.Concat(V.Local.ChildrenData(0),V.Local.ChildrenData(0),"                ",V.Local.desc,"    ","                    ",V.Local.loadchild)
+
+						F.Intrinsic.String.RPad(V.Local.desc," ",20,V.Local.desc)
+						F.Intrinsic.String.RPad(V.Local.Childrendata(1)," ",16,V.Local.qty)
+						F.Intrinsic.String.Concat(V.Local.loadchild,V.Ambient.NewLine,V.Local.ChildrenData(0),V.Local.desc,V.Local.qty,V.Local.ptemp,"              ","NP",V.Local.loadchild)
+
+						F.Intrinsic.Control.If(V.Local.loadchild.Trim,<>,"")
+							F.Intrinsic.String.Concat("DELETE FROM BOM_MSTR WHERE PARENT='",V.Local.ChildrenData(0),"'",V.Local.sSQL)
+							F.ODBC.Connection!Conn.Execute(V.Local.sSQL)
+
+							F.Intrinsic.String.Concat(V.Local.sCombinedFiles,V.Ambient.NewLine,V.Local.loadchild,V.Local.sCombinedFiles)
+							F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","LB",V.Caller.Terminal,V.Caller.CompanyCode,V.Local.filedir)
+							F.Intrinsic.File.String2File(V.Local.filedir,V.Local.loadchild)
+
+							F.Intrinsic.String.Concat("LB",V.Caller.Terminal,V.Caller.CompanyCode," Y",V.Local.filename)
+							F.Intrinsic.String.RPad(V.Caller.User," ",8,V.Local.temp)
+							F.Intrinsic.String.Concat(V.Ambient.DblQuote,V.Caller.CompanyCode,V.Caller.Terminal,"SUPERVSR",V.Local.filename,V.Ambient.DblQuote,V.Local.BOMLOAD)
+
+
+
+
+							F.Intrinsic.Control.DoEvents
+							F.Intrinsic.Task.LaunchGSSSync("XUPLBOML","-c",V.Local.BOMLOAD)
+						F.Intrinsic.Control.EndIf
+
+					F.Intrinsic.Control.EndIf
+				F.ODBC.Conn!rs.Close
+			F.Intrinsic.Control.EndIf
+
+' 0000000000
+
+
+'			F.Intrinsic.Control.If(V.Local.loadchild.Trim,<>,"")
+'				F.Intrinsic.String.Concat("DELETE FROM BOM_MSTR WHERE PARENT='",V.Local.ChildrenData(0),"'",V.Local.sSQL)
+'				F.ODBC.Connection!Conn.Execute(V.Local.sSQL)
+'
+'				F.Intrinsic.String.Concat(V.Local.sCombinedFiles,V.Ambient.NewLine,V.Local.loadchild,V.Local.sCombinedFiles)
+'				F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","LB",V.Caller.Terminal,V.Caller.CompanyCode,V.Local.filedir)
+'				F.Intrinsic.File.String2File(V.Local.filedir,V.Local.loadchild)
+'
+'				F.Intrinsic.String.Concat("LB",V.Caller.Terminal,V.Caller.CompanyCode," Y",V.Local.filename)
+'				F.Intrinsic.String.RPad(V.Caller.User," ",8,V.Local.temp)
+'				F.Intrinsic.String.Concat(V.Ambient.DblQuote,V.Caller.CompanyCode,V.Caller.Terminal,"SUPERVSR",V.Local.filename,V.Ambient.DblQuote,V.Local.BOMLOAD)
+'
+'				F.Intrinsic.Control.DoEvents
+'				F.Intrinsic.Task.LaunchGSSSync("XUPLBOML","-c",V.Local.BOMLOAD)
+'			F.Intrinsic.Control.EndIf
+
+'==================Child BOM===================
+		F.Intrinsic.Control.Else
+
+	'Reference Upload
+		'Raw Material Part Upload (childrendata(2) will be blank
+			F.Intrinsic.Control.If(V.Local.Childrendata(2).Trim,=,"")
+	
+				'Child Part
+				F.Intrinsic.String.Trim(V.Local.ParentData(0),V.Local.ParentData(0))
+				F.Intrinsic.String.Concat(V.Local.ParentData(0),V.Local.ChildrenData(0),V.Local.ChildrenData(0))
+				F.Intrinsic.String.RPad(V.Local.ParentData(0)," ",20,V.Local.ParentData(0))
+				F.Intrinsic.string.RPad(V.Local.Childrendata(0).Trim," ",20,V.Local.Childrendata(0))
+
+				'Child Qty
+				F.Intrinsic.String.RPad(V.Local.Childrendata(1).Trim," ",16,V.Local.Childrendata(1))
+
+				'Raw Material Part Upload
+				'Create part from Description using X as a Deliminator
+				V.local.Desc.set(V.local.Childrendata(3))
+				F.Intrinsic.String.Concat(V.Ambient.DblQuote,"X",V.Local.ptemp)
+				F.Intrinsic.String.Split(V.Local.desc,V.Local.ptemp,V.Local.PartData)
+				V.local.ptemp.set(V.Local.desc)
+				F.Intrinsic.String.RPad(V.Local.ptemp," ",30,V.Local.ptemp)
+				F.Intrinsic.String.RPad(V.Local.desc.Trim," ",20,V.Local.desc)
+
+				
+				F.Intrinsic.Control.If(V.Local.Childrendata(5).Trim,<>,"")
+					F.Intrinsic.Control.CallSub(Length,"LEN",V.Local.Childrendata(5))
+					V.Local.Childrendata(5).Set(V.Args.LEN)
+				F.Intrinsic.Control.EndIf
+
+				'Use QTY or Area	  If Area is 0 then default to qty
+				F.Intrinsic.String.left(V.local.Childrendata(3).Trim,2,V.Local.isPL)
+				F.Intrinsic.Control.If(V.Local.isPL,=,"PL")
+					F.Intrinsic.Control.CallSub("CalculatePL","QTY",V.Local.Childrendata(1),"sPart",V.local.Desc,"Length",V.Local.Childrendata(5))
+					F.Intrinsic.Math.DIV(V.Local.Childrendata(7).trim,144,V.Local.qty)
+					V.Local.qty.Set(V.Args.fQTY)
+					F.Intrinsic.String.RPad(V.Local.PartData(0)," ",20,V.Local.desc)
+					
+				F.Intrinsic.Control.Else
+
+					' RM Qty will be determined by UM
+					F.Intrinsic.String.Replace(V.Local.Childrendata(3),"'","''",V.Local.sVal)
+					F.Intrinsic.String.Concat("select UM_Inventory from Inventory_Mstr where part='",V.Local.sVal,"' ",V.Local.sSql)
+					F.ODBC.Connection!Conn.ExecuteAndReturn(v.Local.sSql,v.Local.sRet)
+					F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+					F.Intrinsic.Control.If(V.Local.sRet(0).Trim,=,"EA")
+						V.Local.qty.Set(V.Local.Childrendata(1).Trim)
+
+					F.Intrinsic.Control.ElseIf(V.Local.sRet(0).Trim,=,"FT")
+						F.Intrinsic.String.RPad(V.Local.Childrendata(5).Trim," ",14,V.Local.Childrendata(5))
+						V.Local.qty.Set(V.Local.Childrendata(5))
+
+					F.Intrinsic.Control.Else
+						F.Intrinsic.Math.Mult(V.Local.Childrendata(1).Float,V.Local.Childrendata(5).float,V.Local.qty)
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+
+				' The final quantity of a child part = the quantity of the child x the quantity of the parent
+				'F.Intrinsic.Math.Mult(V.Local.qty.Float,V.Local.ParentData(1).Float,V.Local.qty)
+				F.Intrinsic.String.RPad(V.Local.qty.Trim," ",16,V.Local.qty)
+				
+				'Check if Part Exists in Inventory and get master description, if not in inventory then don't upload.
+				F.Intrinsic.String.Replace(V.Local.desc,"'","''",V.Local.tempdesc)
+				F.Intrinsic.String.Concat("Select * from INVENTORY_MSTR where PART='",V.Local.tempdesc.Trim,"' ",V.Local.sSql)
+				F.ODBC.Connection!Conn.OpenRecordsetRW("rs",V.Local.sSql)
+					F.Intrinsic.Control.If(V.Odbc.Conn!rs.EOF,=,True)
+					F.Intrinsic.Control.AndIf(V.Local.tempdesc.Trim,<>,"")
+						F.Intrinsic.String.IsInString(V.Local.PartMissing,V.Local.desc,True,V.Local.bInstr)
+						F.Intrinsic.Control.If(V.Local.bInstr,=,False)
+							F.Intrinsic.String.Concat(V.Local.PartMissing,V.Local.desc,V.Ambient.NewLine,V.Local.PartMissing)
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.Else
+
+
+						'Child Upload Data Set for Normal Part & setup 2nd level bom and raw material
+						F.Intrinsic.String.RPad(V.ODBC.Conn!rs.FieldValTrim!DESCRIPTION," ",30,V.Local.ptemp)
+						F.Intrinsic.String.Concat(V.Local.ChildrenData(0),V.Local.ChildrenData(0),"                ",V.Local.desc,"    ","          ","                    ",V.Local.loadchild)
+						F.Intrinsic.String.Concat("DELETE FROM BOM_MSTR WHERE PARENT='",V.Local.ChildrenData(0),"'",V.Local.sSQL)
+						F.ODBC.Connection!Conn.Execute(V.Local.sSQL)
+						F.Intrinsic.String.Concat(V.Local.ldprogram,V.Ambient.NewLine,V.Local.ParentData(0),V.Local.desc,V.Local.qty,V.Local.ptemp,"              ","NP",V.Local.ldprogram)
+					F.Intrinsic.Control.EndIf
+				F.ODBC.Conn!rs.Close
+
+'====================
+			' see if there is a Buyout; if there is add lines for it
+'			F.Intrinsic.Control.If(V.Local.Childrendata(2).Trim,<>,"")
+			F.Intrinsic.Control.Else
+
+				'Check if Part Exists in Inventory and get master description, if not in inventory then don't upload.
+				F.Intrinsic.String.Replace(V.Local.Childrendata(2).Trim,"'","''",V.Local.tempdesc)
+				F.Intrinsic.String.RPad(V.Local.Childrendata(2).Trim," ",20,V.Local.desc)
+				F.Intrinsic.String.Concat("Select * from INVENTORY_MSTR where PART='",V.Local.tempdesc.Trim,"' ",V.Local.sSql)
+				F.ODBC.Connection!Conn.OpenRecordsetRW("rs",V.Local.sSql)
+					F.Intrinsic.Control.If(V.Odbc.Conn!rs.EOF,=,True)
+					F.Intrinsic.Control.AndIf(V.Local.tempdesc.Trim,<>,"")
+						F.Intrinsic.String.IsInString(V.Local.PartMissing,V.Local.desc,True,V.Local.bInstr)
+						F.Intrinsic.Control.If(V.Local.bInstr,=,False)
+							F.Intrinsic.String.Concat(V.Local.PartMissing,V.Local.desc,V.Ambient.NewLine,V.Local.PartMissing)
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.Else
+
+						'Child Upload Data Set for Normal Part & setup 2nd level bom and raw material
+						F.Intrinsic.String.RPad(V.ODBC.Conn!rs.FieldValTrim!DESCRIPTION," ",30,V.Local.ptemp)
+						V.Local.qty.Set(V.Local.Childrendata(1))
+
+						' The final quantity of a child part = the quantity of the child x the quantity of the parent
+						'F.Intrinsic.Math.Mult(V.Local.qty.Float,V.Local.ParentData(1).Float,V.Local.qty)
+						F.Intrinsic.String.RPad(V.Local.qty," ",16,V.Local.qty)
+
+						F.Intrinsic.String.RPad(V.Local.desc," ",20,V.Local.desc)
+						F.Intrinsic.String.Concat(V.Local.ldprogram,V.Ambient.NewLine,V.Local.ParentData(0),V.Local.desc,V.Local.qty,V.Local.ptemp,"              ","NP",V.Local.ldprogram)
+					F.Intrinsic.Control.EndIf
+				F.ODBC.Conn!rs.Close
+			F.Intrinsic.Control.EndIf
+
+		F.Intrinsic.Control.EndIf
+		Function.Intrinsic.Math.Add(Variable.Local.CurrentChild,"1",Variable.Local.CurrentChild)
+	Function.Intrinsic.Control.Loop
+
+
+	'Sort Upload array before upload.
+	F.Intrinsic.String.Split(V.Local.childsort,"*!!*",V.Local.childsort)
+	F.Intrinsic.String.SortAsc(V.Local.childsort,V.Local.childsort)
+
+	'Construct load program string from array
+	F.Intrinsic.Math.Sub(V.Local.childsort.UBound,0,V.Local.ubound)
+	F.Intrinsic.Control.For(V.Local.x,1,V.Local.ubound,1)
+		F.Intrinsic.String.Split(V.Local.childsort(v.Local.x),"*!*",V.Local.temparray)
+		F.Intrinsic.String.Concat(V.Local.ldprogram,V.Local.temparray(1),V.Local.ldprogram)
+	F.Intrinsic.Control.Next(V.Local.x)
+
+	F.Intrinsic.String.Concat(V.Local.sCombinedFiles,V.Ambient.NewLine,V.Local.ldprogram,V.Local.sCombinedFiles)
+	F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","LB",V.Caller.Terminal,V.Caller.CompanyCode,V.Local.filedir)
+	F.Intrinsic.File.String2File(V.Local.filedir,V.Local.ldprogram)
+
+
+
+
+
+	F.Intrinsic.String.Concat("LB",V.Caller.Terminal,V.Caller.CompanyCode," Y",V.Local.filename)
+	F.Intrinsic.String.RPad(V.Caller.User," ",8,V.Local.temp)
+	F.Intrinsic.String.Concat(V.Ambient.QuadQuote,V.Caller.CompanyCode,V.Caller.Terminal,"SUPERVSR",V.Local.filename,V.Ambient.QUADQuote,V.Local.BOMLOAD)
+
+	F.Intrinsic.Control.DoEvents
+	F.Intrinsic.Task.LaunchGSSSync("XUPLBOML","-c",V.Local.BOMLOAD)
+
+	Function.Intrinsic.Control.If(Variable.Local.Seperator4Chars,=,"----")
+		F.Intrinsic.Control.ExitDo
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Loop
+
+F.Intrinsic.String.Concat(V.Local.sCombinedFiles,V.Ambient.NewLine,V.Local.ldDraw,V.Local.sCombinedFiles)
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","LB",V.Caller.Terminal,V.Caller.CompanyCode,V.Local.filedir)
+
+F.Intrinsic.File.String2File(V.Local.filedir,V.Local.ldDraw)
+
+F.Intrinsic.String.Concat("LB",V.Caller.Terminal,V.Caller.CompanyCode," Y",V.Local.filename)
+F.Intrinsic.String.RPad(V.Caller.User," ",8,V.Local.temp)
+F.Intrinsic.String.Concat(V.Ambient.QuadQuote,V.Caller.CompanyCode,V.Caller.Terminal,"SUPERVSR",V.Local.filename,V.Ambient.QUADQuote,V.Local.BOMLOAD)
+
+F.Intrinsic.Control.DoEvents
+F.Intrinsic.Task.LaunchGSSSync("XUPLBOML","-c",V.Local.BOMLOAD)
+
+Function.Intrinsic.UI.Msgbox("BOM Import Complete")
+
+
+F.Intrinsic.Control.If(V.Local.PartMissing.Trim,<>,"")
+	F.Intrinsic.UI.Msgbox(V.Local.PartMissing,"Parts Missing!")
+F.Intrinsic.Control.EndIf
+F.Intrinsic.File.CloseFile(V.Local.iHndl)
+
+Function.Intrinsic.Control.CallSub("Exit")
+
+Program.Sub.WriteBOM.End
+
+Program.Sub.CalculatePL.Start
+V.Local.sDimensions.Declare(String)
+V.Local.sHeight.Declare(String)
+V.Local.sWidth.Declare(String)
+V.Local.fHeight.Declare(Long)
+V.Local.fWidth.Declare(Float)
+V.Local.sTempPart.Declare(String)
+V.Local.fQTY.Declare(Float)
+V.Local.iUB.Declare(Long)
+V.Local.sTemp.Declare(String)
+V.Local.sError.Declare(String)
+V.Local.bNumeric.Declare(Boolean)
+V.Local.fLen.Declare(Float)
+
+V.Local.fQTY.Set(V.Args.QTY.Float)
+
+F.Intrinsic.String.Replace(V.args.sPart,"PL","",V.Local.sTempPart)
+F.Intrinsic.String.Trim(V.Local.sTempPart,V.Local.sTempPart)
+F.Intrinsic.String.Split(V.Local.sTempPart,"X",V.Local.sTempPart)
+
+F.Intrinsic.String.Replace(V.Local.sTempPart(1),V.Ambient.DblQuote,"",V.Local.sTempPart(1))
+F.Intrinsic.String.Split(V.Local.sTempPart(1)," ",V.Local.sDimensions)
+
+F.Intrinsic.Control.If(V.Local.sDimensions.UBound,>=,1)
+	F.Intrinsic.String.Split(V.Local.sDimensions(1),"/",V.Local.sWidth)
+
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Split(V.Local.sDimensions(0),"/",V.Local.sWidth)
+
+F.Intrinsic.Control.EndIf
+
+
+V.Local.iUB.Set(V.Local.sWidth.UBound)
+F.Intrinsic.Control.If(V.Local.iUB,>=,1)
+'	V.Local.fQTY.Set(0)
+	F.Intrinsic.Math.IsNumeric(V.Local.sWidth(0),V.Local.bNumeric)
+
+	F.Intrinsic.Control.If(V.Local.bNumeric,<>,True)
+		F.Intrinsic.String.Concat("Error calculating quantity.  The following string is non-numeric: ",V.Local.sWidth(0),V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.CallSub(Exit)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Math.IsNumeric(V.Local.sWidth(1),V.Local.bNumeric)
+
+	F.Intrinsic.Control.If(V.Local.bNumeric,<>,True)
+		F.Intrinsic.String.Concat("Error calculating quantity.  The following string is non-numeric: ",V.Local.sWidth(1),V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.CallSub(Exit)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Math.Div(V.Local.sWidth(0),V.Local.sWidth(1),V.Local.fWidth)
+
+F.Intrinsic.Control.Else
+	V.Local.fWidth.Set(V.Local.sWidth(0))
+
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Local.sDimensions.UBound,>=,1)
+	F.Intrinsic.Math.IsNumeric(V.Local.sDimensions(0),V.Local.bNumeric)
+
+	F.Intrinsic.Control.If(V.Local.bNumeric,<>,True)
+		F.Intrinsic.String.Concat("Error calculating quantity.  The following string is non-numeric: ",V.Local.sDimensions(0),V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.CallSub(Exit)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Math.Add(V.Local.fWidth,V.Local.sDimensions(0),V.Local.fWidth)
+F.Intrinsic.Control.EndIf
+
+'Makes sure numbers are numeric.
+F.Intrinsic.Math.IsNumeric(V.Local.fWidth,V.Local.bNumeric)
+F.Intrinsic.Control.If(V.Local.bNumeric,<>,True)
+	F.Intrinsic.String.Concat("Error calculating quantity.  The following string is non-numeric: ",V.Local.fWidth,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Math.IsNumeric(V.Args.Length,V.Local.bNumeric)
+
+F.Intrinsic.Control.If(V.Local.bNumeric,<>,True)
+	F.Intrinsic.String.Concat("Error calculating quantity.  The following string is non-numeric: ",V.Args.Length,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Math.IsNumeric(V.Local.fQTY,V.Local.bNumeric)
+
+F.Intrinsic.Control.If(V.Local.bNumeric,<>,True)
+	F.Intrinsic.String.Concat("Error calculating quantity.  The following string is non-numeric: ",V.Local.fQTY,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+F.Intrinsic.Control.EndIf
+
+'quantity x width (in inches) x (12 x length) / 144
+'F.Intrinsic.Math.Mult(V.Local.fQTY,V.Local.fWidth,V.Local.fQTY)
+F.Intrinsic.Math.Mult(12,V.Args.Length,V.Local.fLen)
+F.Intrinsic.Math.Mult(V.Local.fWidth,V.Local.fLen,V.Local.fQTY)
+F.Intrinsic.Math.Div(V.Local.fQTY,144,V.Local.fQTY)
+
+F.Intrinsic.String.Format(V.Local.fQTY,"####0.00000",V.Local.sTemp)
+V.Local.fQTY.Set(V.Local.sTemp)
+F.Intrinsic.Math.Round(V.Local.fQTY,4,V.Local.fQTY)
+
+F.Intrinsic.Variable.AddRV("fQTY",V.Local.fQTY)
+
+
+
+Program.Sub.CalculatePL.End
+
+Program.Sub.BOMUpload.Start
+'Sub no longer needed
+'V.Local.filedir.Declare(String)
+'V.Local.loadchild.Declare(String)
+'
+'F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","LB",V.Caller.Terminal,V.Caller.CompanyCode,V.Local.filedir)
+'F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","LB",V.Caller.Terminal,V.Caller.CompanyCode,V.Local.filedir)
+'F.Intrinsic.File.String2File(V.Local.filedir,V.Local.loadchild)
+'
+'F.Intrinsic.String.Concat("LB",V.Caller.Terminal,V.Caller.CompanyCode," Y",V.Local.filename)
+'F.Intrinsic.String.RPad(V.Caller.User," ",8,V.Local.temp)
+'F.Intrinsic.String.Concat(V.Ambient.DblQuote,V.Caller.CompanyCode,V.Caller.Terminal,"SUPERVSR",V.Local.filename,V.Ambient.DblQuote,V.Local.BOMLOAD)
+'F.Intrinsic.Control.DoEvents
+'F.Intrinsic.Task.LaunchGSSSync("XUPLBOML","-c",V.Local.BOMLOAD)
+
+Program.Sub.BOMUpload.End
+
+Program.Sub.length.Start
+
+' length used to be simple decimal feet.  now its coming in as n' - n" (feet and inches)
+
+V.Local.sVal.Declare(String)
+V.Local.sInches.Declare(String)
+V.Local.sFraction.Declare(String)
+V.Local.fRet.Declare(Float)
+V.Local.fHold.Declare(Float)
+
+F.Intrinsic.String.Split(V.Args.LEN,"-",V.Local.sVal)
+F.Intrinsic.Control.If(V.Local.sVal.UBound,>,0)
+	F.Intrinsic.String.Replace(V.Local.sVal(0),"'","",V.Local.sVal(0))
+	F.Intrinsic.String.Replace(V.Local.sVal(1),V.Ambient.DblQuote,"",V.Local.sVal(1))
+	
+	' of course, there could be something like 0' - 1 1/2"
+	F.Intrinsic.String.Split(V.Local.sVal(1),"/",V.Local.sInches)
+	F.Intrinsic.Control.If(V.Local.sInches.UBound,>,0)
+
+		F.Intrinsic.String.Split(V.Local.sVal(1)," ",V.Local.sInches)
+		F.Intrinsic.String.Split(V.Local.sInches(1),"/",V.Local.sFraction)
+		F.Intrinsic.Math.Div(V.Local.sFraction(0).Float,V.Local.sFraction(1).Float,V.Local.fHold)
+		F.Intrinsic.Math.Add(V.Local.sInches(0).Float,V.Local.fHold,V.Local.fRet)
+		F.Intrinsic.Math.Div(V.Local.fRet,12,V.Local.fRet)
+
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Math.Div(V.Local.sVal(1).Float,12,V.Local.fRet)
+
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Math.Add(V.Local.sVal(0).Float,V.Local.fRet,V.Local.fRet)
+F.Intrinsic.Control.Else
+	V.Local.fRet.Set(V.Args.LEN)
+
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Format(V.Local.fRet,"0.000",V.Local.sInches)
+
+F.Intrinsic.Variable.AddRV("LEN",V.Local.sInches)
+
+Program.Sub.length.End
+
+
